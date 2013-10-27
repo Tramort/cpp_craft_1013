@@ -89,13 +89,13 @@ int main( int argc, char* argv[] )
 
         boost::regex input_regex("input_([0-9]{3})\\.txt");
         boost::smatch match;
-        if(!boost::regex_match(cur_path.filename().string(), match, input_regex))
+        std::string input_filename = cur_path.filename().string();
+        if(!boost::regex_match(input_filename, match, input_regex))
         {
             continue;
         }
-
         threads.create_thread(boost::bind(proc, cur_path.string(),
-            BINARY_DIR "/output_" + match[0].str() + ".txt"));
+            BINARY_DIR "/output_" + match[1]+ ".txt"));
         
     }
     threads.join_all();
