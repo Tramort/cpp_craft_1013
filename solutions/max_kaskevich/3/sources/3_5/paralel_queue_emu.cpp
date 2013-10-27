@@ -5,8 +5,6 @@
 #include <boost/regex.hpp>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
-#include <boost/thread/lock_guard.hpp>
-#include <boost/thread/mutex.hpp>
 
 
 namespace fs = boost::filesystem;
@@ -16,11 +14,11 @@ static const uint32_t max_data_size = 2048;
 
 struct message_stats
 {
-    boost::mutex mtx;
+    boost::mutex mtx_;
     uint32_t     seconds;
     int64_t      last_second;
     uint32_t     msg_count;
-    message_stats() : mtx(),
+    message_stats() : mtx_(),
                       seconds(0),
                       last_second(-1),
                       msg_count(0)
@@ -28,7 +26,7 @@ struct message_stats
 
     void add_stat(uint32_t time)
     {
-        boost::lock_guard<boost::mutex> lock(mtx);
+        boost::lock_guard<boost::mutex> lock(mtx_);
         ++msg_count;
         if(time > last_second)
         {
@@ -48,43 +46,41 @@ struct message_stats
 };
 
 
-typedef std::shared_ptr<message_stats> msg_stats_ptr;
-typedef std::map<uint32_t, std::shared_ptr<message_stats> > msg_stats_map;
+typedef std::shared_ptr< message_stats > msg_stats_ptr;
+typedef std::map< uint32_t, msg_stats_ptr > msg_stats_map;
 msg_stats_map msg_stats;
 boost::mutex mtx;
 
 
 msg_stats_ptr get_stats(uint32_t type)
 {
-    std::shared_ptr<message_stats> m_stat;
     msg_stats_map::iterator it = msg_stats.find(type);
     if(it == msg_stats.end())
     {
         boost::lock_guard<boost::mutex> lock(mtx);
         auto res = msg_stats.emplace(type, msg_stats_ptr());
-        m_stat = res.first->second;
         if(res.second)
         {
-            m_stat.reset(new message_stats());
+            res.first->second.reset(new message_stats());
         }
+        return res.first->second;
     }
     else
     {
-        m_stat = it->second;
+        return it->second;
     }
-    return m_stat;
 }
 
 
 void proc(const std::string& input_path)
 {
     std::ifstream input(input_path, std::ios::binary);
-    if(input)
+    if(!input)
     {
         return;
     }
 
-    std::map<uint32_t, uint32_t> msg_size_in_time;
+    std::map< uint32_t, uint32_t > msg_size_in_time;
 
     uint32_t cur_time = 0;
     message m;
@@ -97,7 +93,7 @@ void proc(const std::string& input_path)
             cur_time = m.time;
         }
 
-        auto res = msg_size_in_time.insert(std::make_pair(m.type, m.len + 12));
+        auto res = msg_size_in_time.emplace(m.type, m.len + 12);
         if (!res.second)
         {
             res.first->second += m.len + 12;
@@ -120,8 +116,6 @@ void proc(const std::string& input_path)
 
 int main( int argc, char* argv[] )
 {
-
-
     boost::system::error_code er;
     fs::path bin_dir(BINARY_DIR);
     fs::directory_iterator dir_it(bin_dir, er), end_it;
@@ -141,8 +135,7 @@ int main( int argc, char* argv[] )
         fs::path cur_path = dir_it->path();
 
         boost::regex input_regex("input_([0-9]{3})\\.txt");
-        boost::smatch match;
-        if(!boost::regex_match(cur_path.filename().string(), match, input_regex))
+        if(!boost::regex_match(cur_path.filename().string(), input_regex))
         {
             continue;
         }
@@ -153,7 +146,6 @@ int main( int argc, char* argv[] )
     threads.join_all();
 
     std::ofstream output(BINARY_DIR "/output.txt", std::ios::binary);
-    double avg = 0;
     for(msg_stats_map::value_type& m_stat_pair: msg_stats)
     {
         m_stat_pair.second->write(output, m_stat_pair.first);

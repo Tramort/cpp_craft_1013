@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <fstream>
 #include "message.h"
-#include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <map>
 
