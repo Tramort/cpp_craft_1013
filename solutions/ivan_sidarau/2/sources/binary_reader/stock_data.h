@@ -27,7 +27,7 @@ namespace binary_reader
 	{
 		friend void tests_::test_stock_data();
 
-		char stock_name_[9];
+		char stock_name_[8];
 		char date_time_[8];
 		double price_;
 		double vwap_;

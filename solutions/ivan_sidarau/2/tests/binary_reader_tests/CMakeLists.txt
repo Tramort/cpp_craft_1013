@@ -5,5 +5,5 @@ find_package( Boost ${SEARCH_PARAMETERS} COMPONENTS
 )
 
 compile_project( ${tests_name} "*.cpp" "*.h" BINARY tests ${module_name} Boost )
-register_test( ${tests_name} 0.5 0.6 )
+register_test( ${tests_name} 8.5 8.4 )
 

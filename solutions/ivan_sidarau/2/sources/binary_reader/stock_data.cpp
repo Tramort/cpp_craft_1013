@@ -32,8 +32,8 @@ binary_reader::stock_data::stock_data( const char* stock_name,
 	, f3_( f3 )
 	, f4_( f4 )
 {
-	std::memcpy( stock_name_, stock_name, sizeof( stock_name_ ) );
-	std::memcpy( date_time_, date_time, sizeof( date_time_ ) );
+	memcpy( stock_name_, stock_name, sizeof( stock_name_ ) );
+	memcpy( date_time_, date_time, sizeof( date_time_ ) );
 }
 binary_reader::stock_data::~stock_data()
 {
@@ -47,14 +47,16 @@ void binary_reader::stock_data::write( std::ofstream& out )
 	std::sscanf( date_time_, "%4d%2d%2d", &year, &month, &day );
     date = ( year - 1 ) * 372 +  ( month  - 1 )* 31 + day;
 
-	write_binary( out, stock_name_ );
+	static char stock_name[ 9 ];
+	memcpy( stock_name, stock_name_, sizeof( stock_name_ ) );
+	write_binary( out, stock_name );
 	write_binary( out, date );
 	write_binary( out, vwap_ );
 	write_binary( out, volume_ );
 	write_binary( out, f2_ );	
 }
 void binary_reader::stock_data::write_raw( std::ofstream& out )
-{
+{	
 	write_binary( out, stock_name_ );
 	write_binary( out, date_time_ );
 	write_binary( out, price_ );
