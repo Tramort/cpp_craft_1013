@@ -30,7 +30,11 @@ std::istream& operator >> (std::istream& input, message2_6& m)
     read_binary(input, &m.price);
     read_binary(input, &m.vwap);
     read_binary(input, &m.volume);
+    read_binary(input, &m.f1);
+    read_binary(input, &m.t1);
     read_binary(input, &m.f2);
+    read_binary(input, &m.f3);
+    read_binary(input, &m.f4);
     return input;
 }
 
@@ -67,7 +71,8 @@ int main( int argc, char* argv[] )
         std::ofstream& output = outputs[m.stock_name];
         if (!output.is_open())
         {
-            output.open((boost::format(BINARY_DIR "/output_%1%.txt") % m.stock_name).str());
+            output.open((boost::format(BINARY_DIR "/output_%1%.txt") %
+                std::string(m.stock_name, 8)).str());
         }
         output && output << m;
     }
